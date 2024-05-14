@@ -1,6 +1,22 @@
+using cinema.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDbContext<AppDataContext>();
 var app = builder.Build();
 
-app.MapGet("/", () => "Hello World!");
+// http://localhost:5187/api/categoria/cadastrar
+app.MapPost("/api/categoria/cadastrar", ([FromBody] Categoria categoria, [FromServices] AppDataContext ctx) =>{
+    ctx.Categorias.Add(categoria);
+    ctx.SaveChanges();
+    return Results.Created("$/produto{categoria.Id}", categoria);
+
+}); 
+
+// http://localhost:5187/api/categoria/listar
+app.MapGet("/api/categoria/listar",([FromServices] AppDataContext ctx ) =>{
+    return Results.Ok(ctx.Categorias.ToList());
+});
 
 app.Run();
