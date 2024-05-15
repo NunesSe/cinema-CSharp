@@ -6,5 +6,5 @@ public class Categoria
     public string? Nome { get; set; }
 
     public int FilmeId { get; set; }
-    public Filme? Filme { get; set; }
+    public List<Filme>? Filme { get; }
 }

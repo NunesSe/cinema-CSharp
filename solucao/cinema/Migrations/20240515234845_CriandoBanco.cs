@@ -5,23 +5,23 @@
 namespace cinema.Migrations
 {
     /// <inheritdoc />
-    public partial class MigracaoInicial : Migration
+    public partial class CriandoBanco : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Filmes",
+                name: "Categorias",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Nome = table.Column<string>(type: "TEXT", nullable: true),
-                    Duracao = table.Column<int>(type: "INTEGER", nullable: false)
+                    FilmeId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Filmes", x => x.Id);
+                    table.PrimaryKey("PK_Categorias", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -39,23 +39,23 @@ namespace cinema.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Categorias",
+                name: "Filmes",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Nome = table.Column<string>(type: "TEXT", nullable: true),
-                    FilmeId = table.Column<int>(type: "INTEGER", nullable: false)
+                    Duracao = table.Column<int>(type: "INTEGER", nullable: false),
+                    CategoriaId = table.Column<int>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Categorias", x => x.Id);
+                    table.PrimaryKey("PK_Filmes", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Categorias_Filmes_FilmeId",
-                        column: x => x.FilmeId,
-                        principalTable: "Filmes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        name: "FK_Filmes_Categorias_CategoriaId",
+                        column: x => x.CategoriaId,
+                        principalTable: "Categorias",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -89,9 +89,9 @@ namespace cinema.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Categorias_FilmeId",
-                table: "Categorias",
-                column: "FilmeId");
+                name: "IX_Filmes_CategoriaId",
+                table: "Filmes",
+                column: "CategoriaId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Secao_FilmeId",
@@ -110,9 +110,6 @@ namespace cinema.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Categorias");
-
-            migrationBuilder.DropTable(
                 name: "Secao");
 
             migrationBuilder.DropTable(
@@ -120,6 +117,9 @@ namespace cinema.Migrations
 
             migrationBuilder.DropTable(
                 name: "Sala");
+
+            migrationBuilder.DropTable(
+                name: "Categorias");
         }
     }
 }

@@ -6,6 +6,6 @@ public class Filme
     public string? Nome { get; set; }
     public int Duracao { get; set; }
     public Secao? Secao { get; set; }
-    public ICollection<Categoria>? Categorias { get; set; }    
+    public Categoria? Categorias { get; }    
 
 }
