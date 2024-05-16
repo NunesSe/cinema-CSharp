@@ -11,7 +11,7 @@ var app = builder.Build();
 app.MapPost("/api/categoria/cadastrar", ([FromBody] Categoria categoria, [FromServices] AppDataContext ctx) =>{
     ctx.Categorias.Add(categoria);
     ctx.SaveChanges();
-    return Results.Created("$/produto{categoria.Id}", categoria);
+    return Results.Created("Categoria criada!", categoria);
 
 }); 
 
