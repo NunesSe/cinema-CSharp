@@ -8,17 +8,19 @@ var app = builder.Build();
 
 // Cadastrar uma categoria
 // http://localhost:5187/api/categoria/cadastrar
-app.MapPost("/api/categoria/cadastrar", ([FromBody] Categoria categoria, [FromServices] AppDataContext ctx) =>{
+app.MapPost("/api/categoria/cadastrar", ([FromBody] Categoria categoria, [FromServices] AppDataContext ctx) =>
+{
     // TODO: VALIDAR SE CATEGORIA COM O MESMO NOME JA EXISTE
     ctx.Categorias.Add(categoria);
     ctx.SaveChanges();
     return Results.Created("Categoria criada!", categoria);
 
-}); 
+});
 
 // Listar uma categoria
 // http://localhost:5187/api/categoria/listar
-app.MapGet("/api/categoria/listar",([FromServices] AppDataContext ctx ) =>{
+app.MapGet("/api/categoria/listar", ([FromServices] AppDataContext ctx) =>
+{
     // TODO: MOSTRAR MENSAGEM DIFERENTE CASO NÃO TENHA CATEGORIAS CADASTRADAS
     var categorias = ctx.Categorias.ToList();
     return Results.Ok(categorias);
@@ -32,7 +34,7 @@ app.MapGet("/api/categoria/listar",([FromServices] AppDataContext ctx ) =>{
 
 // Adicionar um filme
 // http://localhost:5187/api/filme/cadastrar
-app.MapPost("/api/filme/cadastrar", (Filme filme, [FromServices] AppDataContext ctx) =>
+app.MapPost("/api/filme/cadastrar", ([FromBody] Filme filme, [FromServices] AppDataContext ctx) =>
 {
     // TODO: MOSTRAR MENSAGEM CASO TENTE CADASTRAR UM FILME COM O MESMO NOME
     Categoria? categoria = ctx.Categorias.FirstOrDefault(x => x.Id == filme.CategoriaId);
@@ -50,7 +52,8 @@ app.MapPost("/api/filme/cadastrar", (Filme filme, [FromServices] AppDataContext 
 
 // Listar filmes
 // http://localhost:5187/api/filme/listar
-app.MapGet("/api/filme/listar", ([FromServices] AppDataContext ctx) =>{
+app.MapGet("/api/filme/listar", ([FromServices] AppDataContext ctx) =>
+{
     // MOSTRAR MENSAGEM CASO NAO HAJA FILMES CADASTRADOS
     return Results.Ok(ctx.Filmes.Include(f => f.Categoria).ToList());
 });
@@ -60,5 +63,37 @@ app.MapGet("/api/filme/listar", ([FromServices] AppDataContext ctx) =>{
 
 // DELETAR UM FILME
 // TODO: FAZER OPERAÇÃO, 
+
+
+// Cadastrar uma sala
+// POST: http://localhost:5187/api/sala/cadastrar
+app.MapPost("/api/sala/cadastrar", ([FromBody] Sala sala, [FromServices] AppDataContext ctx) =>
+{
+    if (sala.AssentosOcupados > sala.QuantidadeAssentos)
+    {
+        return Results.BadRequest("Insira dados validos, você inseriu uma quantidade de assentos ocupados maior que a quantidade de assentos!");
+    }
+
+    if (sala.AssentosOcupados < 0 || sala.QuantidadeAssentos < 0)
+    {
+        return Results.BadRequest("Quantidade de assentos invalidas, não é possivel criar com 0 assentos!");
+    }
+
+    ctx.Salas.Add(sala);
+    ctx.SaveChanges();
+    return Results.Ok(sala);
+});
+
+// Listar todas as salas
+// GET: http://localhost:5187/api/sala/listar
+app.MapGet("api/sala/listar", ([FromServices] AppDataContext ctx) =>
+{
+    if (ctx.Salas.Any())
+    {
+        return Results.Ok(ctx.Salas.ToList());
+    }
+    return Results.NotFound("Nenhuma sala encontrada!");
+});
+
 
 app.Run();
