@@ -10,8 +10,8 @@ using cinema.Models;
 namespace cinema.Migrations
 {
     [DbContext(typeof(AppDataContext))]
-    [Migration("20240516215947_MigracaoInicial")]
-    partial class MigracaoInicial
+    [Migration("20240517221744_Inicial")]
+    partial class Inicial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -101,8 +101,7 @@ namespace cinema.Migrations
                     b.HasIndex("FilmeId")
                         .IsUnique();
 
-                    b.HasIndex("SalaId")
-                        .IsUnique();
+                    b.HasIndex("SalaId");
 
                     b.ToTable("Sessoes");
                 });
@@ -127,8 +126,8 @@ namespace cinema.Migrations
                         .IsRequired();
 
                     b.HasOne("cinema.Models.Sala", "Sala")
-                        .WithOne("Sessao")
-                        .HasForeignKey("cinema.Models.Sessao", "SalaId")
+                        .WithMany()
+                        .HasForeignKey("SalaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -138,11 +137,6 @@ namespace cinema.Migrations
                 });
 
             modelBuilder.Entity("cinema.Models.Filme", b =>
-                {
-                    b.Navigation("Sessao");
-                });
-
-            modelBuilder.Entity("cinema.Models.Sala", b =>
                 {
                     b.Navigation("Sessao");
                 });

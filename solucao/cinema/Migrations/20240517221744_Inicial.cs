@@ -5,7 +5,7 @@
 namespace cinema.Migrations
 {
     /// <inheritdoc />
-    public partial class MigracaoInicial : Migration
+    public partial class Inicial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -102,8 +102,7 @@ namespace cinema.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Sessoes_SalaId",
                 table: "Sessoes",
-                column: "SalaId",
-                unique: true);
+                column: "SalaId");
         }
 
         /// <inheritdoc />

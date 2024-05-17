@@ -75,7 +75,7 @@ app.MapGet("/api/filme/por-categoria/categoriaId", ([FromRoute] int categoriaId,
 // http://localhost:5187/api/filme/buscar/nome
 app.MapGet("/api/filme/buscar/nome", ([FromRoute] string nome, [FromServices] AppDataContext ctx) =>
 {
-    var filmes = ctx.Filmes.Include(f => f.Categoria).Where(f => f.nome.Contains(nome)).ToList();
+    var filmes = ctx.Filmes.Include(f => f.Categoria).Where(f => f.Nome.Contains(nome)).ToList();
     if (!filmes.Any())
     {
         return Results.NotFound("Nenhum filme encontrado com esse nome.");
