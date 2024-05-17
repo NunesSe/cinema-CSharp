@@ -58,6 +58,19 @@ app.MapGet("/api/filme/listar", ([FromServices] AppDataContext ctx) =>
     return Results.Ok(ctx.Filmes.Include(f => f.Categoria).ToList());
 });
 
+
+// Listar filmes por categoria
+// http://localhost:5187/api/filme/por-categoria/{categoriaId}
+app.MapGet("/api/filme/por-categoria/{categoriaId}", ([FromRoute] int categoriaId, [FromServices] AppDataContext ctx) =>
+{
+    var filmes = ctx.Filmes.Include(f => f.Categoria).Where(f => f.CategoriaId == categoriaId).ToList();
+    if(!filmes.Any()){
+        return Results.NotFound("Nenhum filme encontrado nessa categoria!");
+    }
+    return Results.Ok(filmes);
+});
+
+
 // Alterar um filme
 // TODO: MUDAR O NOME DO FILME
 
