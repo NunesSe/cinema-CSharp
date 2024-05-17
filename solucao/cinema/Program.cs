@@ -26,6 +26,7 @@ app.MapGet("/api/categoria/listar", ([FromServices] AppDataContext ctx) =>
     return Results.Ok(categorias);
 });
 
+
 // Alterar uma categoria
 // TODO: MUDAR O NOME DA CATEGORIA, SEMPRE VALIDEM SE ALGO É VALIDO, EX: CATEGORIA EXISTE? ETC
 
@@ -60,8 +61,8 @@ app.MapGet("/api/filme/listar", ([FromServices] AppDataContext ctx) =>
 
 
 // Listar filmes por categoria
-// http://localhost:5187/api/filme/por-categoria/{categoriaId}
-app.MapGet("/api/filme/por-categoria/{categoriaId}", ([FromRoute] int categoriaId, [FromServices] AppDataContext ctx) =>
+// http://localhost:5187/api/filme/por-categoria/categoriaId
+app.MapGet("/api/filme/por-categoria/categoriaId", ([FromRoute] int categoriaId, [FromServices] AppDataContext ctx) =>
 {
     var filmes = ctx.Filmes.Include(f => f.Categoria).Where(f => f.CategoriaId == categoriaId).ToList();
     if(!filmes.Any()){
@@ -69,6 +70,20 @@ app.MapGet("/api/filme/por-categoria/{categoriaId}", ([FromRoute] int categoriaI
     }
     return Results.Ok(filmes);
 });
+
+// Buscar filme por nome
+// http://localhost:5187/api/filme/buscar/nome
+app.MapGet("/api/filme/buscar/nome", ([FromRoute] string nome, [FromServices] AppDataContext ctx) =>
+{
+    var filmes = ctx.Filmes.Include(f => f.Categoria).Where(f => f.nome.Contains(nome)).ToList();
+    if (!filmes.Any())
+    {
+        return Results.NotFound("Nenhum filme encontrado com esse nome.");
+    }
+
+    return Results.Ok(filmes);
+});
+
 
 
 // Alterar um filme
