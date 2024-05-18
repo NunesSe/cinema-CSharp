@@ -28,10 +28,36 @@ app.MapGet("/api/categoria/listar", ([FromServices] AppDataContext ctx) =>
 
 
 // Alterar uma categoria
-// TODO: MUDAR O NOME DA CATEGORIA, SEMPRE VALIDEM SE ALGO É VALIDO, EX: CATEGORIA EXISTE? ETC
+// POST: http://localhost:5187/api/categoria/alterar 
+
+app.MapPost("/api/categoria/alterar", ([FromBody] Categoria categoriaAtualizada, [FromServices] AppDataContext ctx) => 
+{
+    var categoriaExistente  = ctx.Categorias.SingleOrDefault(c => c.Id == categoriaAtualizada.Id);
+    if(categoriaExistente == null){
+        return Results.NotFound("Categoria não encotrada!");
+    }
+    if(string.IsNullOrWhiteSpace(categoriaAtualizada.Nome)){
+        return Results.BadRequest("O nome da categoria nao pode ser vazio");
+    }
+    categoriaExistente.Nome = categoriaAtualizada.Nome;
+    ctx.SaveChanges();
+    return Results.Ok(categoriaExistente);
+});
 
 // DELETAR UMA CATEGORIA
-// TODO: FAZER OPERAÇÃO, SEMPRE VALIDEM SE ALGO É VALIDO, EX: CATEGORIA EXISTE? ETC
+// DELETE: http://localhost:5187/api/categoria/deletar/{id}
+
+    app.MapDelete("/api/categoria/deletar/{id}", ([FromRoute] int id, [FromSeervices] AppDataContext ctx) => 
+    {
+        var categoria - ctx.Categorias.SingleOrDefault(c => c.Id == id );
+        if(categoria == null){
+            return Results.NotFound("Categoria não encotrada!");
+        }
+
+        ctx.Categorias.Remove(categoria);
+        ctx.SaveChanges();
+        return Results.Ok("Categoria deletada comm sucesso!");
+    });
 
 // Adicionar um filme
 // http://localhost:5187/api/filme/cadastrar
