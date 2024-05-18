@@ -30,8 +30,7 @@ app.MapGet("/api/categoria/listar", ([FromServices] AppDataContext ctx) =>
     }
     return Results.Ok(categorias);
 
-    var categorias = ctx.Categorias.ToList();
-    return Results.Ok(categorias);
+
 });
 
 
