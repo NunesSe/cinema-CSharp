@@ -10,7 +10,10 @@ var app = builder.Build();
 // http://localhost:5187/api/categoria/cadastrar
 app.MapPost("/api/categoria/cadastrar", ([FromBody] Categoria categoria, [FromServices] AppDataContext ctx) =>
 {
-    // TODO: VALIDAR SE CATEGORIA COM O MESMO NOME JA EXISTE
+    if(ctx.Categorias.Any(c => c.Nome == categoria.Nome)){
+        return Results.BadRequest("Já existe uma categoria com esse nome!");
+    }
+
     ctx.Categorias.Add(categoria);
     ctx.SaveChanges();
     return Results.Created("Categoria criada!", categoria);
@@ -21,7 +24,12 @@ app.MapPost("/api/categoria/cadastrar", ([FromBody] Categoria categoria, [FromSe
 // http://localhost:5187/api/categoria/listar
 app.MapGet("/api/categoria/listar", ([FromServices] AppDataContext ctx) =>
 {
-    // TODO: MOSTRAR MENSAGEM DIFERENTE CASO NÃO TENHA CATEGORIAS CADASTRADAS
+    var categorias = ctx.Categorias.ToList();
+    if(!categorias.Any()){
+        return Results.NotFound("Nenhuma categoria cadastrada!");
+    }
+    return Results.Ok(categorias);
+
     var categorias = ctx.Categorias.ToList();
     return Results.Ok(categorias);
 });
