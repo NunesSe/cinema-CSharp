@@ -63,7 +63,12 @@ app.MapPost("/api/categoria/alterar", ([FromBody] Categoria categoriaAtualizada,
 // http://localhost:5187/api/filme/cadastrar
 app.MapPost("/api/filme/cadastrar", ([FromBody] Filme filme, [FromServices] AppDataContext ctx) =>
 {
-    // TODO: MOSTRAR MENSAGEM CASO TENTE CADASTRAR UM FILME COM O MESMO NOME
+    var filmeExistente = ctx.Filmes.FirstOrDefault(x => x.Nome == filme.Nome);
+    if (filmeExistente != null)
+    {
+        return Results.BadRequest("Já existe um filme com o mesmo nome.");
+    }
+    
     Categoria? categoria = ctx.Categorias.FirstOrDefault(x => x.Id == filme.CategoriaId);
     if (categoria is null)
     {
@@ -113,10 +118,41 @@ app.MapGet("/api/filme/buscar/nome", ([FromRoute] string nome, [FromServices] Ap
 
 
 // Alterar um filme
-// TODO: MUDAR O NOME DO FILME
+// POST: http://localhost:5187/api/filme/alterar
+app.MapPost("/api/filme/alterar", ([FromBody] Filme filmeAtualizado, [FromServices] AppDataContext ctx) =>
+{
+    var filmeExistente = ctx.Filmes.SingleOrDefault(f => f.Id == filmeAtualizado.Id);
+    if (filmeExistente == null)
+    {
+        return Results.NotFound("Filme não encontrado.");
+    }
 
-// DELETAR UM FILME
-// TODO: FAZER OPERAÇÃO, 
+    if (string.IsNullOrWhiteSpace(filmeAtualizado.Nome))
+    {
+        return Results.BadRequest("O nome do filme invalido.");
+    }
+
+    filmeExistente.Nome = filmeAtualizado.Nome;
+    // Atualize outros campos se necessário
+
+    ctx.SaveChanges();
+    return Results.Ok(filmeExistente);
+});
+
+// DELETAR UM FILME 
+// DELETE: http://localhost:5187/api/filme/deletar/%7Bid%7D
+app.MapDelete("/api/filme/deletar/{id}", ([FromRoute] int id, [FromServices] AppDataContext ctx) =>
+{
+    var filme = ctx.Filmes.SingleOrDefault(f => f.Id == id);
+    if (filme == null)
+    {
+        return Results.NotFound("Filme não encontrado.");
+    }
+
+    ctx.Filmes.Remove(filme);
+    ctx.SaveChanges();
+    return Results.Ok("Filme deletado!");
+});
 
 
 // Cadastrar uma sala
