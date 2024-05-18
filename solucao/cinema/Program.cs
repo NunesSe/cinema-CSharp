@@ -192,5 +192,49 @@ app.MapGet("api/sala/listar", ([FromServices] AppDataContext ctx) =>
     return Results.NotFound("Nenhuma sala encontrada!");
 });
 
+// EDITAR UMA SALA 
+// POST: http://localhost:5187/api/sala/alterar/{id}
+app.MapPost("/api/sala/alterar/{id}", ([FromBody] Sala salaAtualizada, int id, [FromServices] AppDataContext ctx) =>
+{
+    var salaExistente = ctx.Salas.FirstOrDefault(s => s.Id == id);
+    if (salaExistente == null)
+    {
+        return Results.NotFound("Sala não encontrada!");
+    }
+
+    if (salaAtualizada.AssentosOcupados > salaAtualizada.QuantidadeAssentos)
+    {
+        return Results.BadRequest("Numero de assentos ocupados maior que a quantidade de assentos!");
+    }
+
+    if (salaAtualizada.AssentosOcupados < 0 || salaAtualizada.QuantidadeAssentos < 0)
+    {
+        return Results.BadRequest("Numero de assentos inválidas!");
+    }
+
+    salaExistente.Nome = salaAtualizada.Nome;
+    salaExistente.QuantidadeAssentos = salaAtualizada.QuantidadeAssentos;
+    salaExistente.AssentosOcupados = salaAtualizada.AssentosOcupados;
+
+    ctx.SaveChanges();
+    return Results.Ok(salaExistente);
+});
+
+
+
+// DELETAR UMA SALA 
+// DELETE: http://localhost:5187/api/sala/excluir/{id}
+app.MapDelete("/api/sala/excluir/{id}", ([FromRoute]int id, [FromServices] AppDataContext ctx) => 
+{
+    var salaParaExcluir = ctx.Salas.FirstOrDefault(s => s.Id == id);
+    if (salaParaExcluir == null)
+    {
+        return Results.NotFound("Sala não encontrada!");
+    }
+
+    ctx.Salas.Remove(salaParaExcluir);
+    ctx.SaveChanges();
+    return Results.Ok("Sala excluída!");
+});
 
 app.Run();
