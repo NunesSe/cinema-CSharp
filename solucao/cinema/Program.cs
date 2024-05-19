@@ -95,8 +95,6 @@ app.MapPost("/api/filme/cadastrar", ([FromBody] Filme filme, [FromServices] AppD
         return Results.NotFound("Categoria não encontrada!");
     }
 
-
-
     filme.Categoria = categoria;
     ctx.Filmes.Add(filme);
     ctx.SaveChanges();
@@ -112,7 +110,7 @@ app.MapGet("/api/filme/listar", ([FromServices] AppDataContext ctx) =>
     {
         return Results.NotFound("Não foi encontrado nenhum filme!");
     }
-    return Results.Ok(ctx.Filmes.Include(f => f.Categoria).Include(f => f.Sessao).ToList());
+    return Results.Ok(ctx.Filmes.Include(f => f.Categoria).ToList());
 });
 
 
@@ -177,22 +175,6 @@ app.MapPut("/api/filme/alterar/{id}", ([FromBody] Filme filmeAtualizado, [FromRo
 
     filmeExistente.CategoriaId = filmeAtualizado.CategoriaId;
     filmeExistente.Categoria = categoriaExistente;
-
-    if (filmeAtualizado.Sessao != null && filmeExistente.Sessao != null)
-    {
-        var sessaoExistente = ctx.Sessoes.FirstOrDefault(s => s.Id == filmeExistente.Sessao.Id);
-
-        if (sessaoExistente == null)
-        {
-            return Results.NotFound("Sessão não encontrada!");
-        }
-
-        sessaoExistente.HorarioInicio = filmeAtualizado.Sessao.HorarioInicio;
-        sessaoExistente.HorarioFinal = filmeAtualizado.Sessao.HorarioFinal;
-        sessaoExistente.Dia = filmeAtualizado.Sessao.Dia;
-        sessaoExistente.Mes = filmeAtualizado.Sessao.Mes;
-        sessaoExistente.SalaId = filmeAtualizado.Sessao.SalaId;
-    }
 
     ctx.SaveChanges();
     return Results.Ok(filmeExistente);
@@ -291,6 +273,153 @@ app.MapDelete("/api/sala/excluir/{id}", ([FromRoute] int id, [FromServices] AppD
     return Results.Ok("Sala excluída!");
 });
 
+// CADASTRAR UMA SESSÃO
+// POST: http://localhost:5187/api/sessao/cadastrar/
+app.MapPost("/api/sessao/cadastrar", ([FromBody] Sessao sessao, [FromServices] AppDataContext ctx) =>
+{
+    if (string.IsNullOrEmpty(sessao.HorarioInicio) || string.IsNullOrEmpty(sessao.HorarioFinal))
+    {
+        return Results.BadRequest("Horário de início e final são obrigatórios!");
+    }
 
+    if (sessao.Dia <= 0 || sessao.Dia > 31)
+    {
+        return Results.BadRequest("Dia inválido!");
+    }
+
+    if (sessao.Mes <= 0 || sessao.Mes > 12)
+    {
+        return Results.BadRequest("Mês inválido!");
+    }
+
+    var filme = ctx.Filmes.FirstOrDefault(f => f.Id == sessao.FilmeId);
+    if (filme == null)
+    {
+        return Results.NotFound("Filme não encontrado!");
+    }
+
+    var sala = ctx.Salas.FirstOrDefault(s => s.Id == sessao.SalaId);
+    if (sala == null)
+    {
+        return Results.NotFound("Sala não encontrada!");
+    }
+
+    sessao.Filme = filme;
+    sessao.Sala = sala;
+
+    ctx.Sessoes.Add(sessao);
+    ctx.SaveChanges();
+
+    return Results.Created($"/api/sessao/{sessao.Id}", sessao);
+});
+
+// LISTAR TODAS SESSÃO
+// POST: http://localhost:5187/api/sessao/listar/
+app.MapGet("/api/sessao/listar", ([FromServices] AppDataContext ctx) =>
+{
+    if (!ctx.Sessoes.Any())
+    {
+        return Results.NotFound("Não foram encontradas sessões!");
+    }
+
+    var sessoes = ctx.Sessoes
+        .Include(s => s.Filme)
+            .ThenInclude(f => f.Categoria)
+        .Include(s => s.Sala)
+        .ToList();
+
+    return Results.Ok(sessoes);
+});
+
+
+// LISTAR SESSÃO POR ID
+// POST: http://localhost:5187/api/sessao/por-filme/{id}
+app.MapGet("/api/sessao/por-filme/{id}", ([FromRoute] int id, [FromServices] AppDataContext ctx) =>
+{
+    var sessao = ctx.Sessoes.Include(s => s.Filme).Include(s => s.Sala).Where(s => s.FilmeId == id);
+
+    if (sessao == null)
+    {
+        return Results.NotFound("Nenhuma sessão encontrada para esse filme.");
+    }
+
+    return Results.Ok(sessao);
+});
+
+// LISTAR SESSÃO POR DATA (MES/DIA)
+// POST: http://localhost:5187/api/sessao/por-data/{mes}/{dia}
+app.MapGet("/api/sessao/por-data/{mes}/{dia}", ([FromRoute] int mes, [FromRoute] int dia, [FromServices] AppDataContext ctx) =>
+{
+    var sessao = ctx.Sessoes
+        .Include(s => s.Filme)
+        .Include(s => s.Sala)
+        .Where(s => s.Mes == mes && s.Dia == dia);
+
+    if (sessao == null)
+    {
+        return Results.NotFound("Nenhuma sessão encontrada para essa data.");
+    }
+
+    return Results.Ok(sessao);
+});
+
+// ATUALIZAR SESSÃO
+// PUT: http://localhost:5187/api/sessao/atualizar/{id}
+app.MapPut("/api/sessao/atualizar/{id}", ([FromRoute] int id, [FromBody] Sessao sessaoAtualizada, [FromServices] AppDataContext ctx) =>
+{
+    var sessaoExistente = ctx.Sessoes.FirstOrDefault(s => s.Id == id);
+    if (sessaoExistente == null)
+    {
+        return Results.NotFound("Sessão não encontrada.");
+    }
+
+    var filmeExistente = ctx.Filmes.FirstOrDefault(f => f.Id == sessaoAtualizada.FilmeId);
+    if (filmeExistente == null)
+    {
+        return Results.NotFound("Filme não encontrado.");
+    }
+
+    var salaExistente = ctx.Salas.FirstOrDefault(s => s.Id == sessaoAtualizada.SalaId);
+    if (salaExistente == null)
+    {
+        return Results.NotFound("Sala não encontrada.");
+    }
+
+    if (sessaoAtualizada.Dia < 1 || sessaoAtualizada.Dia > 31 || sessaoAtualizada.Mes < 1 || sessaoAtualizada.Mes > 12)
+    {
+        return Results.BadRequest("Dia ou mês de sessão inválidos.");
+    }
+
+    sessaoExistente.HorarioInicio = sessaoAtualizada.HorarioInicio;
+    sessaoExistente.HorarioFinal = sessaoAtualizada.HorarioFinal;
+
+    sessaoExistente.Dia = sessaoAtualizada.Dia;
+    sessaoExistente.Mes = sessaoAtualizada.Mes;
+
+    sessaoExistente.FilmeId = sessaoAtualizada.FilmeId;
+    sessaoExistente.Filme = filmeExistente;
+
+    sessaoExistente.SalaId = sessaoAtualizada.SalaId;
+    sessaoExistente.Sala = salaExistente;
+
+    ctx.SaveChanges();
+    return Results.Ok(sessaoExistente);
+});
+
+// DELETAR SESSÃO
+// POST: http://localhost:5187/api/sessao/excluir/{sessaoId}
+app.MapDelete("/api/sessao/excluir/{sessaoId}", ([FromRoute] int sessaoId, [FromServices] AppDataContext ctx) =>
+{
+    var sessao = ctx.Sessoes.FirstOrDefault(s => s.Id == sessaoId);
+    if (sessao == null)
+    {
+        return Results.NotFound("Sessão não encontrada.");
+    }
+
+    ctx.Sessoes.Remove(sessao);
+    ctx.SaveChanges();
+
+    return Results.Ok("Sessão removida com sucesso.");
+});
 
 app.Run();
