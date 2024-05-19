@@ -10,7 +10,8 @@ var app = builder.Build();
 // http://localhost:5187/api/categoria/cadastrar
 app.MapPost("/api/categoria/cadastrar", ([FromBody] Categoria categoria, [FromServices] AppDataContext ctx) =>
 {
-    if(ctx.Categorias.Any(c => c.Nome == categoria.Nome)){
+    if (ctx.Categorias.Any(c => c.Nome == categoria.Nome))
+    {
         return Results.BadRequest("Já existe uma categoria com esse nome!");
     }
 
@@ -25,7 +26,8 @@ app.MapPost("/api/categoria/cadastrar", ([FromBody] Categoria categoria, [FromSe
 app.MapGet("/api/categoria/listar", ([FromServices] AppDataContext ctx) =>
 {
     var categorias = ctx.Categorias.ToList();
-    if(!categorias.Any()){
+    if (!categorias.Any())
+    {
         return Results.NotFound("Nenhuma categoria cadastrada!");
     }
     return Results.Ok(categorias);
@@ -35,16 +37,22 @@ app.MapGet("/api/categoria/listar", ([FromServices] AppDataContext ctx) =>
 
 
 // Alterar uma categoria
-// POST: http://localhost:5187/api/categoria/alterar 
+// PUT: http://localhost:5187/api/categoria/alterar 
 
-app.MapPost("/api/categoria/alterar", ([FromBody] Categoria categoriaAtualizada, [FromServices] AppDataContext ctx) => 
+app.MapPut("/api/categoria/alterar/{id}", ([FromBody] Categoria categoriaAtualizada, [FromRoute] int id, [FromServices] AppDataContext ctx) =>
 {
-    var categoriaExistente  = ctx.Categorias.SingleOrDefault(c => c.Id == categoriaAtualizada.Id);
-    if(categoriaExistente == null){
-        return Results.NotFound("Categoria não encotrada!");
+    var categoriaExistente = ctx.Categorias.FirstOrDefault(c => c.Id == id);
+    if (categoriaExistente == null)
+    {
+        return Results.NotFound("Categoria com esse id não encotrada!");
     }
-    if(string.IsNullOrWhiteSpace(categoriaAtualizada.Nome)){
-        return Results.BadRequest("O nome da categoria nao pode ser vazio");
+    if (ctx.Categorias.Any(c => c.Nome == categoriaAtualizada.Nome))
+    {
+        return Results.BadRequest("Já existe uma categoria com esse nome!");
+    }
+    if (string.IsNullOrWhiteSpace(categoriaAtualizada.Nome))
+    {
+        return Results.BadRequest("O nome da categoria não pode ser vazio");
     }
     categoriaExistente.Nome = categoriaAtualizada.Nome;
     ctx.SaveChanges();
@@ -54,33 +62,40 @@ app.MapPost("/api/categoria/alterar", ([FromBody] Categoria categoriaAtualizada,
 // DELETAR UMA CATEGORIA
 // DELETE: http://localhost:5187/api/categoria/deletar/{id}
 
-    app.MapDelete("/api/categoria/deletar/{id}", ([FromRoute] int id, [FromSeervices] AppDataContext ctx) => 
+app.MapDelete("/api/categoria/deletar/{id}", ([FromRoute] int id, [FromServices] AppDataContext ctx) =>
+{
+    var categoria = ctx.Categorias.FirstOrDefault(c => c.Id == id);
+    if (categoria == null)
     {
-        var categoria - ctx.Categorias.SingleOrDefault(c => c.Id == id );
-        if(categoria == null){
-            return Results.NotFound("Categoria não encotrada!");
-        }
+        return Results.NotFound("Categoria não encotrada!");
+    }
 
-        ctx.Categorias.Remove(categoria);
-        ctx.SaveChanges();
-        return Results.Ok("Categoria deletada comm sucesso!");
-    });
+    ctx.Categorias.Remove(categoria);
+    ctx.SaveChanges();
+    return Results.Ok("Categoria deletada comm sucesso!");
+});
 
 // Adicionar um filme
 // http://localhost:5187/api/filme/cadastrar
 app.MapPost("/api/filme/cadastrar", ([FromBody] Filme filme, [FromServices] AppDataContext ctx) =>
 {
+    if (filme.Duracao <= 0)
+    {
+        return Results.BadRequest("Duração de filme invalido!");
+    }
     var filmeExistente = ctx.Filmes.FirstOrDefault(x => x.Nome == filme.Nome);
     if (filmeExistente != null)
     {
         return Results.BadRequest("Já existe um filme com o mesmo nome.");
     }
-    
+
     Categoria? categoria = ctx.Categorias.FirstOrDefault(x => x.Id == filme.CategoriaId);
     if (categoria is null)
     {
         return Results.NotFound("Categoria não encontrada!");
     }
+
+
 
     filme.Categoria = categoria;
     ctx.Filmes.Add(filme);
@@ -93,17 +108,25 @@ app.MapPost("/api/filme/cadastrar", ([FromBody] Filme filme, [FromServices] AppD
 // http://localhost:5187/api/filme/listar
 app.MapGet("/api/filme/listar", ([FromServices] AppDataContext ctx) =>
 {
-    // MOSTRAR MENSAGEM CASO NAO HAJA FILMES CADASTRADOS
-    return Results.Ok(ctx.Filmes.Include(f => f.Categoria).ToList());
+    if (!ctx.Filmes.Any())
+    {
+        return Results.NotFound("Não foi encontrado nenhum filme!");
+    }
+    return Results.Ok(ctx.Filmes.Include(f => f.Categoria).Include(f => f.Sessao).ToList());
 });
 
 
 // Listar filmes por categoria
 // http://localhost:5187/api/filme/por-categoria/categoriaId
-app.MapGet("/api/filme/por-categoria/categoriaId", ([FromRoute] int categoriaId, [FromServices] AppDataContext ctx) =>
+app.MapGet("/api/filme/por-categoria/{categoriaId}", ([FromRoute] int categoriaId, [FromServices] AppDataContext ctx) =>
 {
+    if (!ctx.Categorias.Any(f => f.Id == categoriaId))
+    {
+        return Results.NotFound("Não foi encontrada nenhuma categoria com esse id!");
+    }
     var filmes = ctx.Filmes.Include(f => f.Categoria).Where(f => f.CategoriaId == categoriaId).ToList();
-    if(!filmes.Any()){
+    if (!filmes.Any())
+    {
         return Results.NotFound("Nenhum filme encontrado nessa categoria!");
     }
     return Results.Ok(filmes);
@@ -111,7 +134,7 @@ app.MapGet("/api/filme/por-categoria/categoriaId", ([FromRoute] int categoriaId,
 
 // Buscar filme por nome
 // http://localhost:5187/api/filme/buscar/nome
-app.MapGet("/api/filme/buscar/nome", ([FromRoute] string nome, [FromServices] AppDataContext ctx) =>
+app.MapGet("/api/filme/buscar/{nome}", ([FromRoute] string nome, [FromServices] AppDataContext ctx) =>
 {
     var filmes = ctx.Filmes.Include(f => f.Categoria).Where(f => f.Nome.Contains(nome)).ToList();
     if (!filmes.Any())
@@ -122,13 +145,11 @@ app.MapGet("/api/filme/buscar/nome", ([FromRoute] string nome, [FromServices] Ap
     return Results.Ok(filmes);
 });
 
-
-
 // Alterar um filme
-// POST: http://localhost:5187/api/filme/alterar
-app.MapPost("/api/filme/alterar", ([FromBody] Filme filmeAtualizado, [FromServices] AppDataContext ctx) =>
+// PUT: http://localhost:5187/api/filme/alterar
+app.MapPut("/api/filme/alterar/{id}", ([FromBody] Filme filmeAtualizado, [FromRoute] int id, [FromServices] AppDataContext ctx) =>
 {
-    var filmeExistente = ctx.Filmes.SingleOrDefault(f => f.Id == filmeAtualizado.Id);
+    var filmeExistente = ctx.Filmes.FirstOrDefault(f => f.Id == id);
     if (filmeExistente == null)
     {
         return Results.NotFound("Filme não encontrado.");
@@ -136,11 +157,42 @@ app.MapPost("/api/filme/alterar", ([FromBody] Filme filmeAtualizado, [FromServic
 
     if (string.IsNullOrWhiteSpace(filmeAtualizado.Nome))
     {
-        return Results.BadRequest("O nome do filme invalido.");
+        return Results.BadRequest("O nome do filme é inválido.");
     }
 
+
     filmeExistente.Nome = filmeAtualizado.Nome;
-    // Atualize outros campos se necessário
+    if (filmeAtualizado.Duracao <= 0)
+    {
+        return Results.BadRequest("Duração invalida!");
+    }
+
+    filmeExistente.Duracao = filmeAtualizado.Duracao;
+
+    var categoriaExistente = ctx.Categorias.FirstOrDefault(c => c.Id == filmeAtualizado.CategoriaId);
+    if (categoriaExistente == null)
+    {
+        return Results.BadRequest("Categoria não encontrada.");
+    }
+
+    filmeExistente.CategoriaId = filmeAtualizado.CategoriaId;
+    filmeExistente.Categoria = categoriaExistente;
+
+    if (filmeAtualizado.Sessao != null && filmeExistente.Sessao != null)
+    {
+        var sessaoExistente = ctx.Sessoes.FirstOrDefault(s => s.Id == filmeExistente.Sessao.Id);
+
+        if (sessaoExistente == null)
+        {
+            return Results.NotFound("Sessão não encontrada!");
+        }
+
+        sessaoExistente.HorarioInicio = filmeAtualizado.Sessao.HorarioInicio;
+        sessaoExistente.HorarioFinal = filmeAtualizado.Sessao.HorarioFinal;
+        sessaoExistente.Dia = filmeAtualizado.Sessao.Dia;
+        sessaoExistente.Mes = filmeAtualizado.Sessao.Mes;
+        sessaoExistente.SalaId = filmeAtualizado.Sessao.SalaId;
+    }
 
     ctx.SaveChanges();
     return Results.Ok(filmeExistente);
@@ -171,9 +223,9 @@ app.MapPost("/api/sala/cadastrar", ([FromBody] Sala sala, [FromServices] AppData
         return Results.BadRequest("Insira dados validos, você inseriu uma quantidade de assentos ocupados maior que a quantidade de assentos!");
     }
 
-    if (sala.AssentosOcupados < 0 || sala.QuantidadeAssentos < 0)
+    if (sala.AssentosOcupados < 0 || sala.QuantidadeAssentos <= 0)
     {
-        return Results.BadRequest("Quantidade de assentos invalidas, não é possivel criar com 0 assentos!");
+        return Results.BadRequest("Quantidade de assentos invalidas!");
     }
 
     ctx.Salas.Add(sala);
@@ -193,8 +245,8 @@ app.MapGet("api/sala/listar", ([FromServices] AppDataContext ctx) =>
 });
 
 // EDITAR UMA SALA 
-// POST: http://localhost:5187/api/sala/alterar/{id}
-app.MapPost("/api/sala/alterar/{id}", ([FromBody] Sala salaAtualizada, int id, [FromServices] AppDataContext ctx) =>
+// PUT: http://localhost:5187/api/sala/alterar/{id}
+app.MapPut("/api/sala/alterar/{id}", ([FromBody] Sala salaAtualizada, [FromRoute] int id, [FromServices] AppDataContext ctx) =>
 {
     var salaExistente = ctx.Salas.FirstOrDefault(s => s.Id == id);
     if (salaExistente == null)
@@ -212,7 +264,11 @@ app.MapPost("/api/sala/alterar/{id}", ([FromBody] Sala salaAtualizada, int id, [
         return Results.BadRequest("Numero de assentos inválidas!");
     }
 
-    salaExistente.Nome = salaAtualizada.Nome;
+
+    if (salaAtualizada.AssentosOcupados < 0 || salaAtualizada.QuantidadeAssentos <= 0)
+    {
+        return Results.BadRequest("Quantidade de assentos invalidas!");
+    }
     salaExistente.QuantidadeAssentos = salaAtualizada.QuantidadeAssentos;
     salaExistente.AssentosOcupados = salaAtualizada.AssentosOcupados;
 
@@ -220,11 +276,9 @@ app.MapPost("/api/sala/alterar/{id}", ([FromBody] Sala salaAtualizada, int id, [
     return Results.Ok(salaExistente);
 });
 
-
-
 // DELETAR UMA SALA 
 // DELETE: http://localhost:5187/api/sala/excluir/{id}
-app.MapDelete("/api/sala/excluir/{id}", ([FromRoute]int id, [FromServices] AppDataContext ctx) => 
+app.MapDelete("/api/sala/excluir/{id}", ([FromRoute] int id, [FromServices] AppDataContext ctx) =>
 {
     var salaParaExcluir = ctx.Salas.FirstOrDefault(s => s.Id == id);
     if (salaParaExcluir == null)
@@ -236,5 +290,7 @@ app.MapDelete("/api/sala/excluir/{id}", ([FromRoute]int id, [FromServices] AppDa
     ctx.SaveChanges();
     return Results.Ok("Sala excluída!");
 });
+
+
 
 app.Run();
