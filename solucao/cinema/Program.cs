@@ -446,6 +446,23 @@ app.MapPost("/api/reserva/cadastrar", ([FromBody] Reserva reserva, [FromServices
         reservaSessao.Sessao = sessao;
     }
 
+    // Validar se há sessões na reserva
+    if (reserva.ReservaSessoes == null || reserva.ReservaSessoes.Count == 0)
+    {
+        return Results.BadRequest("A reserva deve conter pelo menos uma sessão.");
+    }
+    
+    // Validar se todas as sessões da reserva existem
+    foreach (var reservaSessao in reserva.ReservaSessoes)
+    {
+        var sessao = ctx.Sessoes.FirstOrDefault(s => s.Id == reservaSessao.SessaoId);
+        if (sessao == null)
+        {
+            return Results.NotFound($"Sessão com Id {reservaSessao.SessaoId} não encontrada!");
+        }
+        reservaSessao.Sessao = sessao;
+    }
+
     ctx.Reservas.Add(reserva);
     ctx.SaveChanges();
     return Results.Created($"/api/reserva/{reserva.Id}", reserva);
@@ -459,8 +476,26 @@ app.MapGet("/api/reserva/listar", ([FromServices] AppDataContext ctx) =>
         .Include(r => r.ReservaSessoes)
             .ThenInclude(rs => rs.Sessao)
         .ToList();
+
+ // Verifica se não há reservas encontradas
+    if (reservas == null || reservas.Count == 0)
+    {
+        
+        return Results.NotFound("Não foram encontradas reservas.");
+    }
     
     return Results.Ok(reservas);
 });
+
+
+
+
+
+
+
+
+
+
+
 
 app.Run();
