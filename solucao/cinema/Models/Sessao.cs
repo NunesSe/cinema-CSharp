@@ -11,5 +11,7 @@ namespace cinema.Models {
 
         public int SalaId { get; set; }
         public Sala Sala { get; set; }
+
+        public List<ReservaSessao> ReservaSessoes { get; set; }
     }
 }

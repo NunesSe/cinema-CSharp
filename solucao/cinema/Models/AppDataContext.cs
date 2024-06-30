@@ -11,5 +11,18 @@ public class AppDataContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseSqlite("Data Source=banco.db");
+
+        modelBuilder.Entity<ReservaSessao>()
+            .HasKey(rs => new { rs.ReservaId, rs.SessaoId });
+
+        modelBuilder.Entity<ReservaSessao>()
+            .HasOne(rs => rs.Reserva)
+            .WithMany(r => r.ReservaSessoes)
+            .HasForeignKey(rs => rs.ReservaId);
+
+        modelBuilder.Entity<ReservaSessao>()
+            .HasOne(rs => rs.Sessao)
+            .WithMany(s => s.ReservaSessoes)
+            .HasForeignKey(rs => rs.SessaoId);
     }
 }

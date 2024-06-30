@@ -200,6 +200,14 @@ app.MapDelete("/api/filme/deletar/{id}", ([FromRoute] int id, [FromServices] App
 // POST: http://localhost:5187/api/sala/cadastrar
 app.MapPost("/api/sala/cadastrar", ([FromBody] Sala sala, [FromServices] AppDataContext ctx) =>
 {
+
+    sala.AssentosOcupados = 0;
+
+    if (sala.QuantidadeAssentos <= 0)
+    {
+        return Results.BadRequest("Quantidade de assentos inválida!");
+    }
+
     if (sala.AssentosOcupados > sala.QuantidadeAssentos)
     {
         return Results.BadRequest("Insira dados validos, você inseriu uma quantidade de assentos ocupados maior que a quantidade de assentos!");
@@ -214,6 +222,8 @@ app.MapPost("/api/sala/cadastrar", ([FromBody] Sala sala, [FromServices] AppData
     ctx.SaveChanges();
     return Results.Ok(sala);
 });
+
+
 
 // Listar todas as salas
 // GET: http://localhost:5187/api/sala/listar
@@ -420,6 +430,37 @@ app.MapDelete("/api/sessao/excluir/{sessaoId}", ([FromRoute] int sessaoId, [From
     ctx.SaveChanges();
 
     return Results.Ok("Sessão removida com sucesso.");
+});
+
+// Cadastrar uma reserva
+// POST: http://localhost:5187/api/reserva/cadastrar
+app.MapPost("/api/reserva/cadastrar", ([FromBody] Reserva reserva, [FromServices] AppDataContext ctx) =>
+{
+    foreach (var reservaSessao in reserva.ReservaSessoes)
+    {
+        var sessao = ctx.Sessoes.FirstOrDefault(s => s.Id == reservaSessao.SessaoId);
+        if (sessao == null)
+        {
+            return Results.NotFound($"Sessão com Id {reservaSessao.SessaoId} não encontrada!");
+        }
+        reservaSessao.Sessao = sessao;
+    }
+
+    ctx.Reservas.Add(reserva);
+    ctx.SaveChanges();
+    return Results.Created($"/api/reserva/{reserva.Id}", reserva);
+});
+
+// Listar todas as reservas
+// GET: http://localhost:5187/api/reserva/listar
+app.MapGet("/api/reserva/listar", ([FromServices] AppDataContext ctx) =>
+{
+    var reservas = ctx.Reservas
+        .Include(r => r.ReservaSessoes)
+            .ThenInclude(rs => rs.Sessao)
+        .ToList();
+    
+    return Results.Ok(reservas);
 });
 
 app.Run();
