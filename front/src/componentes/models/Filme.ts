@@ -1,5 +1,7 @@
 export interface Filme {
     id?: string;
     nome: string;
-    descricao: string;
+    duracao: number;
+    CategoriaId: number;
+    categoriaId?: number;
   }

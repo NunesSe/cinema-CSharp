@@ -1,15 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Filme } from "../models/Filme";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Categoria } from "../models/Categoria";
 
-function AlterarFilme() {
-  const navigate = useNavigate();
-  const { id } = useParams();
+function CadastrarFilme() {
   const [nome, setNome] = useState("");
   const [duracao, setDuracao] = useState("");
   const [categoriaId, setCategoriaId] = useState("");
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     carregarCategorias();
@@ -30,37 +29,34 @@ function AlterarFilme() {
       });
   }
 
-  function alterarFilme(e: React.FormEvent) {
+  function cadastrarFilme(e: React.FormEvent) {
     e.preventDefault();
 
-    const filmeAtualizado: Filme = {
+    const filme: Filme = {
       nome: nome,
       duracao: parseInt(duracao),
       CategoriaId: parseInt(categoriaId),
     };
 
-    fetch(`http://localhost:5187/api/filme/alterar/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(filmeAtualizado),
-    })
-      .then((resposta) => resposta.json())
-      .then(() => {
-        navigate("/filmes/listar");
-      })
+    fetch("http://localhost:5187/api/filme/cadastrar", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(filme),
+        })
+        e.preventDefault();
   }
 
   return (
     <div>
-      <h1>Alterar Filme</h1>
-      <form onSubmit={alterarFilme}>
+      <h1>Cadastrar Filme</h1>
+      <form onSubmit={cadastrarFilme}>
         <label>Nome:</label>
-        <input type="text" value={nome} onChange={(e) => setNome(e.target.value)} required />
+        <input type="text" onChange={(e) => setNome(e.target.value)} required />
         <br />
         <label>Duração (minutos):</label>
-        <input type="number" value={duracao} onChange={(e) => setDuracao(e.target.value)} required />
+        <input type="number" onChange={(e) => setDuracao(e.target.value)} required />
         <br />
         <label>Categoria:</label>
         <select value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)} required>
@@ -71,10 +67,10 @@ function AlterarFilme() {
           ))}
         </select>
         <br />
-        <button type="submit">Salvar</button>
+        <button type="submit">Cadastrar</button>
       </form>
     </div>
   );
 }
 
-export default AlterarFilme;
+export default CadastrarFilme;
