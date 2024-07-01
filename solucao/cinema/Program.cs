@@ -4,6 +4,16 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDataContext>();
+
+builder.Services.AddCors(options =>
+    options.AddPolicy("Acesso Total",
+        configs => configs
+            .AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod())
+);
+
+
 var app = builder.Build();
 
 // Cadastrar uma categoria
@@ -72,7 +82,7 @@ app.MapDelete("/api/categoria/deletar/{id}", ([FromRoute] int id, [FromServices]
 
     ctx.Categorias.Remove(categoria);
     ctx.SaveChanges();
-    return Results.Ok("Categoria deletada comm sucesso!");
+    return Results.Ok(ctx.Categorias.ToList());
 });
 
 // Adicionar um filme
@@ -110,7 +120,7 @@ app.MapGet("/api/filme/listar", ([FromServices] AppDataContext ctx) =>
     {
         return Results.NotFound("Não foi encontrado nenhum filme!");
     }
-    return Results.Ok(ctx.Filmes.Include(f => f.Categoria).ToList());
+    return Results.Ok(ctx.Filmes.ToList());
 });
 
 
@@ -280,7 +290,7 @@ app.MapDelete("/api/sala/excluir/{id}", ([FromRoute] int id, [FromServices] AppD
 
     ctx.Salas.Remove(salaParaExcluir);
     ctx.SaveChanges();
-    return Results.Ok("Sala excluída!");
+    return Results.Ok(ctx.Salas.ToList());
 });
 
 // CADASTRAR UMA SESSÃO
@@ -487,15 +497,6 @@ app.MapGet("/api/reserva/listar", ([FromServices] AppDataContext ctx) =>
     return Results.Ok(reservas);
 });
 
-
-
-
-
-
-
-
-
-
-
+app.UseCors("Acesso Total");
 
 app.Run();
